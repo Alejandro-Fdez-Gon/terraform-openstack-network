@@ -1,0 +1,4 @@
+#cloud-config
+runcmd:
+  - sed -i 's/^#Port 22/Port 2020/' /etc/ssh/sshd_config
+  - systemctl restart sshd

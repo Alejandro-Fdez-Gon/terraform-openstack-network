@@ -1,0 +1,6 @@
+#cloud-config
+packages:
+   - nginx
+runcmd:
+   - echo "$(hostname)" > /var/www/html/index.nginx-debian.html
+   - systemctl restart nginx
