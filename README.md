@@ -39,6 +39,8 @@ Before you begin, ensure you have the following:
 
 ## 🚀 Installation and Usage
 
+For the first execution, please check the ⚠️ Warning section at the bottom of this document.
+
 1.  **Clone the Repository:**
 
     ```sh
@@ -86,6 +88,66 @@ To use variables with values other than the defaults, modify the `terraform.tfva
   
   ```sh
   terraform destroy
+  ```
+
+## ⚠️ Warning
+
+For the first execution, it will be necessary to make certain modifications to the `servers.tf` file as the image used to create the database does not exist by default.
+
+Modify the resource `bbdd`:
+
+  ```sh
+    resource "openstack_compute_instance_v2" "bbdd" {
+        name            = var.bbdd_name
+        image_name      = data.openstack_images_image_v2.jammy.name
+        flavor_name     = data.openstack_compute_flavor_v2.m1-smaller.name
+        key_pair        = openstack_compute_keypair_v2.key_bbdd.name
+        security_groups = [openstack_networking_secgroup_v2.my_security_group.name]
+    
+        network {
+            name = openstack_networking_network_v2.nets[0].name
+        }
+
+        user_data  = file("cloud-init-bbdd")
+        depends_on = [openstack_networking_router_v2.router]
+    }
+  ```
+
+Afterwards, take a snapshot of the resource and execute the following command to create the image:
+  
+  ```sh
+    openstack image create --container-format bare --disk-format qcow2 \
+        --file snapshot.raw bbdd-alejandro-fernandez
+  ```
+
+Destroy the resource `bbdd` and his key pair:
+  
+  ```sh
+    terraform destroy -target="openstack_compute_instance_v2.bbdd" -target="openstack_compute_keypair_v2.key_bbdd"
+  ```
+
+Restore the resource `bbdd`:
+
+  ```sh
+    resource "openstack_compute_instance_v2" "bbdd" {
+        name            = var.bbdd_name
+        image_name      = data.openstack_images_image_v2.bbdd.name
+        flavor_name     = data.openstack_compute_flavor_v2.m1-smaller.name
+        key_pair        = openstack_compute_keypair_v2.key_bbdd.name
+        security_groups = [openstack_networking_secgroup_v2.my_security_group.name]
+    
+        network {
+            name = openstack_networking_network_v2.nets[1].name
+        }
+
+        depends_on = [openstack_networking_router_v2.router]
+    }
+  ```
+
+Create the resource `bbdd`:
+
+  ```sh
+    terraform apply
   ```
 ---
 
